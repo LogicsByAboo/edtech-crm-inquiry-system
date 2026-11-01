@@ -1,0 +1,60 @@
+server:
+  port: ${PORT:${SERVER_PORT:8080}}
+  error:
+    include-message: never
+    include-binding-errors: never
+    include-stacktrace: never
+    include-exception: false
+
+spring:
+  application:
+    name: edtech-crm-backend
+
+  datasource:
+    url: ${DB_URL:${NEON_CONNECTION:}}
+    username: ${DB_USERNAME:}
+    password: ${DB_PASSWORD:}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      idle-timeout: 30000
+      max-lifetime: 1800000
+      connection-timeout: 20000
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: false
+        jdbc:
+          batch_size: 25
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:temporary_development_secret_key_ensure_at_least_32_characters_for_hmac_sha256}
+    expiration-ms: ${JWT_EXPIRATION_MS:3600000}
+
+  cors:
+    frontend-origins: ${FRONTEND_ORIGINS:http://localhost:5173}
+
+  admin:
+    bootstrap:
+      name: ${ADMIN_NAME:Administrator}
+      email: ${ADMIN_EMAIL:aboobucker2003@gmail.com}
+      password: ${ADMIN_PASSWORD:admin123}
+
+logging:
+  level:
+    root: INFO
+    com.edtech.crm: INFO
+    org.springframework.security: WARN
