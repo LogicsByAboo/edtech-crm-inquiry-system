@@ -1,3 +1,4 @@
+
 package com.edtech.crm.config;
 
 import com.edtech.crm.security.CustomAccessDeniedHandler;
@@ -29,10 +30,12 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final CorsConfigurationSource corsConfigurationSource;
 
-    public SecurityConfig(JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint,
-                          CustomAccessDeniedHandler customAccessDeniedHandler,
-                          JwtAuthenticationFilter jwtAuthenticationFilter,
-                          CorsConfigurationSource corsConfigurationSource) {
+    public SecurityConfig(
+            JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint,
+            CustomAccessDeniedHandler customAccessDeniedHandler,
+            JwtAuthenticationFilter jwtAuthenticationFilter,
+            CorsConfigurationSource corsConfigurationSource) {
+
         this.jwtAuthenticationEntryPoint = jwtAuthenticationEntryPoint;
         this.customAccessDeniedHandler = customAccessDeniedHandler;
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
@@ -45,36 +48,55 @@ public class SecurityConfig {
     }
 
     @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
+    public AuthenticationManager authenticationManager(
+            AuthenticationConfiguration configuration) throws Exception {
         return configuration.getAuthenticationManager();
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http)
+            throws Exception {
+
         http
-                .cors(cors -> cors.configurationSource(corsConfigurationSource))
-                .csrf(AbstractHttpConfigurer::disable)
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .exceptionHandling(exceptions -> exceptions
-                        .authenticationEntryPoint(jwtAuthenticationEntryPoint)
-                        .accessDeniedHandler(customAccessDeniedHandler)
-                )
-                .authorizeHttpRequests(auth -> auth
-                        // Handle OPTIONS preflight requests explicitly
-                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        // Public inquiry submission
-                        .requestMatchers(HttpMethod.POST, "/api/inquiries").permitAll()
-                        // Admin login
-                        .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
-                        // Spring error dispatcher
-                        .requestMatchers("/error").permitAll()
-                        // Authenticated admin endpoints
-                        .requestMatchers("/api/auth/me").hasRole("ADMIN")
-                        .requestMatchers("/api/inquiries/**").hasRole("ADMIN")
-                        // Require authentication for all other endpoints
-                        .anyRequest().authenticated()
-                )
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+            .cors(cors -> cors.configurationSource(corsConfigurationSource))
+            .csrf(AbstractHttpConfigurer::disable)
+            .sessionManagement(session ->
+                session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .exceptionHandling(exceptions -> exceptions
+                .authenticationEntryPoint(jwtAuthenticationEntryPoint)
+                .accessDeniedHandler(customAccessDeniedHandler))
+            .authorizeHttpRequests(auth -> auth
+
+                // Allow CORS preflight requests
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
+                // Public inquiry submission (with or without trailing slash)
+                .requestMatchers(
+                    HttpMethod.POST,
+                    "/api/inquiries",
+                    "/api/inquiries/"
+                ).permitAll()
+
+                // Public admin login
+                .requestMatchers(
+                    HttpMethod.POST,
+                    "/api/auth/login"
+                ).permitAll()
+
+                // Permit Spring Boot error handling
+                .requestMatchers("/error").permitAll()
+
+                // Require ADMIN role for admin endpoints
+                .requestMatchers("/api/auth/me").hasRole("ADMIN")
+                .requestMatchers("/api/inquiries/**").hasRole("ADMIN")
+
+                // Protect all remaining endpoints
+                .anyRequest().authenticated()
+            )
+            .addFilterBefore(
+                jwtAuthenticationFilter,
+                UsernamePasswordAuthenticationFilter.class
+            );
 
         return http.build();
     }
